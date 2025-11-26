@@ -2,6 +2,10 @@
 
 Node.js backend for an interactive live-streaming trivia platform featuring real-time game logic via Socket.io and WebRTC.
 
+## Docker
+
+## Prisma
+
 ## Code Quality and Standards:
 
 This project enforces strict code quality and formatting standards using ESLint and Prettier. This ensures consistency across the codebase, making the code easier to read, maintain, and collaborate on.
