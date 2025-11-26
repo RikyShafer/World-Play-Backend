@@ -4,8 +4,6 @@ const whitelist = [
     "http://localhost:8000",
 ];
 
-
-
 const corsOptions = {
     origin:  (origin, callback) => {
         if (whitelist.indexOf(origin) !== -1 || !origin) {
@@ -14,8 +12,9 @@ const corsOptions = {
             callback(new Error("Not allowed by CORS"));
         }
     },
-    credentials: true, // Add this line
-  optionsSuccessStatus: 200
+    credentials: true,
+    optionsSuccssStatus:200
 };
-  
-module.exports = corsOptions;
+
+// במקום module.exports = corsOptions;
+export default corsOptions; // <-- זהו הייצוא הנכון עבור ESM

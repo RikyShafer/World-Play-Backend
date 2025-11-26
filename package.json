@@ -2,6 +2,7 @@
   "name": "world-play-backend",
   "version": "1.0.0",
   "description": "Node.js backend",
+  "type": "module",
   "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -30,7 +31,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "bugs": {
     "url": "https://github.com/ABERsara/World-Play-Backend/issues"
   },
