@@ -4,9 +4,12 @@ import { defineConfig } from 'eslint/config';
 
 export default defineConfig([
   {
-    ignores: ['prisma/**/*', 'node_modules/**/*',"*.json", // Ignore JSON files
-            "*.md" // Ignore Markdown files
-             ],
+    ignores: [
+      'prisma/**/*',
+      'node_modules/**/*',
+      '*.json', // Ignore JSON files
+      '*.md', // Ignore Markdown files
+    ],
   },
   {
     files: ['**/*.{js,mjs,cjs}'],
