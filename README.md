@@ -1,5 +1,3 @@
-// ...existing code...
-
 ## World-Play-Backend
 
 Node.js backend for an interactive live-streaming trivia platform featuring real-time game logic via Socket.io and WebRTC.
@@ -17,8 +15,6 @@ Prerequisites
 - A `.env` file at the project root (see `.env.example` below).
 
 .env example
-
-```env
 // filepath: c:\World-Play-Backend\.env.example
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
@@ -45,6 +41,25 @@ If using TypeScript, run npm run build in the image and run dist/... (or run bui
 The bind mount - .:/usr/src/app in docker-compose will override files that were created during the image build (e.g., dist/ or generated Prisma client). If you rely on build artifacts from the image, remove the - .:/usr/src/app bind mount or change it to only mount node_modules.
 Prisma requires environment variable DATABASE_URL. When running migrations or generating client inside containers, the .env must be present in the container or DATABASE_URL provided via docker-compose environment.
 
+## Prisma
+
+Generate client:
+
+Local (host): npx prisma generate
+In container: docker-compose exec app sh -c "npx prisma generate"
+Apply migrations:
+
+Development: npx prisma migrate dev
+Production (apply existing migrations): npx prisma migrate deploy
+Reset DB (dev, destructive): npx prisma migrate reset
+Run these commands either on your host (with a reachable DB) or inside the app container.
+
+Running the app
+Development (if you have a dev script like nodemon):
+npm run dev
+Production run from container (image built with start script): docker-compose up --build -d
+If your project is TypeScript, ensure Dockerfile runs npm run build during image build and that CMD points to the built file (e.g., node dist/index.js).
+
 ## Code Quality and Standards:
 
 This project enforces strict code quality and formatting standards using ESLint and Prettier. This ensures consistency across the codebase, making the code easier to read, maintain, and collaborate on.
@@ -63,4 +78,7 @@ Developers should use the following commands regularly during development:Comman
 npm run lint, Runs ESLint to check for all code quality and logical issues.
 npm run lint:fix, Runs ESLint and automatically fixes all fixable errors.
 npm run format, Runs Prettier to reformat and style the entire codebase.
+
+```
+
 ```
