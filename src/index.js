@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import userRoutes from '../routes/user.routes.js';
 import financeRoutes from '../routes/finance.routes.js';
 import streamRoutes from '../routes/stream.routes.js';
+import gameRoutes from '../routes/games.routes.js';
 import corsOptions from '../config/corsOptions.js';
 
 dotenv.config();
@@ -27,6 +28,7 @@ app.use(cors(corsOptions));
 app.use('/users', userRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/streams', streamRoutes);
+app.use('/api/games', gameRoutes);
 
 app.get('/', (req, res) => {
   res.send('Live Game Streaming Backend is Running!');
