@@ -25,6 +25,12 @@ enum StreamStatus {
   FINISHED
 }
 
+enum GameStatus {
+  WAITING
+  ACTIVE
+  FINISHED
+}
+
 enum PointType {
   TRIVIA
   GAME
@@ -141,7 +147,7 @@ model Stream {
   startTime DateTime?    @map("start_time")
   endTime   DateTime?    @map("end_time")
   status    StreamStatus @default(WAITING)
-
+lastPausedAt DateTime?    @map("last_paused_at")
   host      User         @relation("HostStreams", fields: [hostId], references: [id])
   games     Game[]
   
@@ -153,6 +159,7 @@ model Game {
   id          String   @id @default(uuid())
   title       String
   description String?  @db.Text
+  status      GameStatus @default(WAITING)  
   
   hostId      String   @map("host_id")
   moderatorId String?  @map("moderator_id")

@@ -4,7 +4,9 @@ import http from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import userRoutes from '../routes/user.routes.js';
-import apiRoutes from '../routes/api.routes.js';
+import financeRoutes from '../routes/finance.routes.js';
+import streamRoutes from '../routes/stream.routes.js';
+import gameRoutes from '../routes/games.routes.js';
 import corsOptions from '../config/corsOptions.js';
 
 dotenv.config();
@@ -24,7 +26,9 @@ const PORT = process.env.PORT || 8080;
 app.use(express.json());
 app.use(cors(corsOptions));
 app.use('/users', userRoutes);
-app.use('/api', apiRoutes);
+app.use('/api/finance', financeRoutes);
+app.use('/api/streams', streamRoutes);
+app.use('/api/games', gameRoutes);
 
 app.get('/', (req, res) => {
   res.send('Live Game Streaming Backend is Running!');
