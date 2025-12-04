@@ -1,8 +1,7 @@
 import jwt from 'jsonwebtoken';
 
 export const authenticateToken = (req, res, next) => {
-  // תיקון קריטי: שליפת הסוד בתוך הפונקציה
-  // זה מבטיח שהמשתנה נטען נכון גם אם קובץ ה-env נטען באיחור
+
   const JWT_SECRET = process.env.JWT_SECRET;
 
   const authHeader = req.headers['authorization'];
@@ -17,7 +16,6 @@ export const authenticateToken = (req, res, next) => {
     return res.status(401).json({ message: 'גישה נדחתה: לא סופק טוקן' });
   }
 
-  // חילוץ הטוקן (הסרת המילה Bearer)
   const token = authHeader.split(' ')[1]; 
 
   if (!token) {
@@ -26,11 +24,9 @@ export const authenticateToken = (req, res, next) => {
   }
 
   try {
-    // האימות בפועל
     const decoded = jwt.verify(token, JWT_SECRET);
     console.log('✅ Verify Success!');
     
-    // הוספת פרטי המשתמש לבקשה
     req.user = decoded;
     next(); 
   } catch (error) {
