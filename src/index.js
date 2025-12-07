@@ -1,52 +1,52 @@
 import express from 'express';
 import cors from 'cors';
 import http from 'http';
-import { Server } from 'socket.io';
 import dotenv from 'dotenv';
+
+// ייבוא נתיבי REST
 import userRoutes from '../routes/user.routes.js';
 import financeRoutes from '../routes/finance.routes.js';
 import streamRoutes from '../routes/stream.routes.js';
 import gameRoutes from '../routes/games.routes.js';
+import chatRouter from '../routes/chat.router.js'; // ודא נתיב נכון
+
+// ייבוא קונפיגורציה ושירותי Socket
 import corsOptions from '../config/corsOptions.js';
+import { initializeSocketIO } from '../services/socket.service.js'; // ודא נתיב נכון
 
 dotenv.config();
 
 const app = express();
-const server = http.createServer(app);
+// מוגדר כ-server
+const server = http.createServer(app); 
 
-const io = new Server(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST'],
-  },
-});
-
+// הגדרת פורט
 const PORT = process.env.PORT || 8080;
 
+// --- Middleware ---
 app.use(express.json());
-app.use(cors(corsOptions));
+// שימוש ב-corsOptions המיובא
+app.use(cors(corsOptions)); 
+
+// --- Routes (REST API) ---
 app.use('/users', userRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/streams', streamRoutes);
 app.use('/api/games', gameRoutes);
+app.use('/api/chat', chatRouter);
+
+// --- אתחול Socket.IO (ללא כפילות) ---
+// העברת משתנה server המוגדר מעלה
+const io = initializeSocketIO(server); 
+app.set('io', io); // עכשיו io מוגדר היטב
 
 app.get('/', (req, res) => {
-  res.send('Live Game Streaming Backend is Running!');
+  res.send('Live Game Streaming Backend is Running!');
 });
 
-io.on('connection', (socket) => {
-  console.log(`User Connected: ${socket.id}`);
-
-  socket.on('send_message', (data) => {
-    console.log(`Message received from ${data.user}: ${data.message}`);
-    socket.broadcast.emit('receive_message', data);
-  });
-
-  socket.on('disconnect', () => {
-    console.log('User Disconnected', socket.id);
-  });
-});
+// --- הסר את כל לוגיקת io.on('connection') מכאן! ---
+// הלוגיקה הזו צריכה להיות בתוך initializeSocketIO בקובץ socket.service.js
 
 server.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server is running on http://localhost:${PORT}`);
 });
