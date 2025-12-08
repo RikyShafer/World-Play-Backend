@@ -13,6 +13,11 @@ import corsOptions from '../config/corsOptions.js';
 import { initializeSocketIO } from '../services/socket.service.js'; // ודא נתיב נכון
 import analyticsRoutes from '../routes/analytics.routes.js';
 
+import chatRoutes from '../routes/chat.router.js';
+import notificationRoutes from '../routes/notification.routes.js';
+// ...
+
+
 dotenv.config();
 
 const app = express();
@@ -33,6 +38,8 @@ app.use('/api/finance', financeRoutes);
 app.use('/api/streams', streamRoutes);
 app.use('/api/games', gameRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/chat', chatRoutes);
 
 app.get('/', (req, res) => {
   res.send('Live Game Streaming Backend is Running!');

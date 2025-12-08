@@ -1,45 +1,48 @@
-import prisma from '../utils/prisma.js'; // זה הייבוא הנכון של ה-singleton
-
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 /**
- * @desc טוען היסטוריית הודעות צ'אט עבור משחק ספציפי
- * @route GET /api/chat/:gameId/history
- * @access Public (או נדרש Auth)
+ * @desc טוען היסטוריית הודעות פרטיות בין שני משתמשים
+ * @route GET /api/chat/history/:otherUserId
  */
 export const getChatHistory = async (req, res) => {
-    // Note: בפרויקט אמיתי, נדרש אימות שהמשתמש מורשה לצפות בצ'אט
-    const { gameId } = req.params;
-    const { limit = 50, offset = 0 } = req.query; // Pagination
+    // 1. במקום gameId, אנחנו מקבלים את ה-ID של מי שאנחנו מדברים איתו
+    const { otherUserId } = req.params; 
+    
+    // 2. אנחנו צריכים לדעת מי "אני" (המשתמש שמבקש את ההודעות)
+    // כרגע ניקח את זה מה-Query, בפרודקשן זה יבוא מה-Token
+    const myUserId = req.query.myUserId; 
+
+    if (!myUserId || !otherUserId) {
+        return res.status(400).json({ success: false, message: "Missing user IDs" });
+    }
 
     try {
-        // חשוב: נניח שאתה משתמש ב-gameId ב-WHERE כדי לסנן הודעות. 
-        // אם לא הוספת את gameId לסכמת ChatMessage, עליך לעשות זאת!
+        // 3. שליפת ההודעות - השינוי הגדול כאן
         const messages = await prisma.chatMessage.findMany({
-            // אם הוספת gameId ל-ChatMessage:
-            // where: { gameId: gameId }, 
-            
-            // כרגע נשתמש בתנאי פשוט שאינו מסנן לפי gameId, מכיוון שאין עמודה כזו בסכמה
-            // כפי שהצגת. אם זאת התנהגות שגויה, הוסף את gameId לסכמת Prisma.
-            
+            where: {
+                OR: [
+                    // אופציה א': אני שלחתי והוא קיבל
+                    { senderId: myUserId, receiverId: otherUserId },
+                    // אופציה ב': הוא שלח ואני קיבלתי
+                    { senderId: otherUserId, receiverId: myUserId }
+                ]
+            },
             select: {
                 id: true,
                 messageText: true,
                 createdAt: true,
+                senderId: true, // חשוב כדי לדעת בצד לקוח אם ההודעה שלי או שלו
                 sender: {
-                    select: {
-                        id: true,
-                        username: true,
-                        role: true,
-                    },
+                    select: { username: true } // רק השם, לא צריך את כל הפרטים
                 },
             },
             orderBy: {
-                createdAt: 'desc', // הודעות חדשות אחרונות (כדי להפוך אח"כ ב-Client)
+                createdAt: 'desc', // מהחדש לישן
             },
-            take: parseInt(limit),
-            skip: parseInt(offset),
+            take: 50 // מגבלת הודעות
         });
 
-        // הופכים את הסדר כדי שהישנות יופיעו קודם (לצורך תצוגה)
+        // הופכים חזרה כדי להציג בסדר הגיוני בצ'אט (ישן למעלה, חדש למטה)
         const reversedMessages = messages.reverse();
 
         res.status(200).json({
@@ -53,4 +56,22 @@ export const getChatHistory = async (req, res) => {
     }
 };
 
-// ניתן להוסיף כאן לוגיקה לטיפול בהודעות פרטיות (P2P) אם נדרש
+
+// פונקציה חדשה: שליחת הודעה (כדי שנוכל לבדוק ב-Postman)
+export const sendMessageAPI = async (req, res) => {
+    const { senderId, receiverId, messageText } = req.body;
+
+    try {
+        const newMessage = await prisma.chatMessage.create({
+            data: {
+                senderId,
+                receiverId,
+                messageText,
+                messageType: 'TEXT'
+            }
+        });
+        res.status(201).json({ success: true, data: newMessage });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
