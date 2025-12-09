@@ -1,5 +1,5 @@
-import * as chatService from '../services/chat.service.js'; // ייבוא הפונקציות מהשירות
 import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 
 /**
  * שליפת התראות למשתמש (עם אופציה לסינון)
