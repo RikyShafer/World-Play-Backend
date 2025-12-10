@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import permissionsService from './permissions.service.js';
-import validationService from './validation.service.js';
+import * as gameRules from '../services/validation.service.js'; // ודאי שהקובץ הזה קיים בתיקיית services
 const prisma = new PrismaClient();
 
 const gameService = {
@@ -9,11 +9,11 @@ const gameService = {
    */
   async createGame(userId, { title, description, streamId, moderatorId }) {
     // א. האם הסטרים קיים במערכת?
-    await validationService.ensureStreamExists(streamId);
+    await gameRules.ensureStreamExists(streamId);
     // ב. האם הסטרים פנוי?
-    await validationService.validateStreamIsFree(streamId);
+    await gameRules.validateStreamIsFree(streamId);
     // ג. האם המארח פנוי לארח ולא מארח במשחק פעיל אחר?
-    await validationService.validateHostIsAvailable(userId);
+    await gameRules.validateHostIsAvailable(userId);
     // --- יצירת המשחק ---
 
     // בגלל שאנחנו צריכים ליצור גם GAME וגם PARTICIPANT (עבור המארח),
@@ -49,7 +49,7 @@ const gameService = {
    * כולל ולידציה עסקית: שחקן לא יכול לשחק בשני משחקים פעילים במקביל.
    */
   async joinGame(gameId, userId, role = 'PLAYER') {
-    const eligibility = await validationService.validateJoinEligibility(
+    const eligibility = await gameRules.validateJoinEligibility(
       gameId,
       userId,
       role
@@ -76,13 +76,13 @@ const gameService = {
   async updateGameStatus(gameId, userId, newStatus) {
     //הרשאות אבטחה וולידציות
     // 1. Validation: קיום המשחק
-    const game = await validationService.ensureGameExists(gameId);
+    const game = await gameRules.ensureGameExists(gameId);
 
     // 2. Permission: רק מארח
     await permissionsService.ensureHost(gameId, userId);
 
     // 3. Validation: חוקיות המעבר
-    validationService.validateStatusTransition(game.status, newStatus);
+    gameRules.validateStatusTransition(game.status, newStatus);
 
     // לוגיקה עסקית
     const dataToUpdate = { status: newStatus };

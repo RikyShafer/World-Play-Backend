@@ -1,21 +1,15 @@
 // services/analytics.service.js
 import { PrismaClient } from '@prisma/client';
+import * as gameRules from '../services/validation.service.js';
 const prisma = new PrismaClient();
 
 export const createViewLog = async (userId, reportData) => {
   const { gameId, duration, totalQuestions, correctAnswers } = reportData;
 
-  // 1. קודם כל, נשלוף את המשחק כדי להבין מי ה-Host שלו
-  const game = await prisma.game.findUnique({
-    where: { id: gameId },
-    select: { hostId: true }, // אנחנו צריכים רק את ה-ID של המארח
-  });
-
-  if (!game) {
-    throw new Error('Game not found');
-  }
-
-  // 2. חישוב אחוזי השתתפות
+  // 1. שימוש בפונקציה קיימת: וידוא קיום המשחק ושליפת הנתונים שלו
+  // הפונקציה הזו (מהקובץ validation) כבר מחזירה את ה-game אם הוא קיים
+  const game = await gameRules.ensureGameExists(gameId);
+  // 2. חישוב אחוזי השתתפות (לוגיקה עסקית פשוטה שנשארת כאן)
   let participationPercent = 0;
   if (totalQuestions > 0) {
     participationPercent = correctAnswers / totalQuestions;

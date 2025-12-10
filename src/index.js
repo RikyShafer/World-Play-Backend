@@ -46,7 +46,6 @@ app.get('/', (req, res) => {
   res.send('Live Game Streaming Backend is Running!');
 });
 
-// --- ⚡ כאן השינוי החשוב: הפעלת הסוקט ⚡ ---
 // אנחנו שולחים את ה-server שיצרנו כדי שהסוקט "ירכב" עליו
 const io = initializeSocketIO(server);
 

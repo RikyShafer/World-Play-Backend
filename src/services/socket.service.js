@@ -1,39 +1,22 @@
 // src/services/socket.service.js
 import { Server } from 'socket.io';
 import { socketAuth } from '../middleware/socketAuth.js';
-import { logger } from '../utils/logger.js'; // <--- ייבוא הלוגר
+import { logger } from '../utils/logger.js';
+import { registerGameHandlers } from '../sockets/game.handler.js';
 
 export const initializeSocketIO = (httpServer) => {
   const io = new Server(httpServer, {
-    cors: {
-      origin: '*',
-      methods: ['GET', 'POST'],
-    },
+    cors: { origin: '*', methods: ['GET', 'POST'] },
   });
 
   io.use(socketAuth);
 
   io.on('connection', (socket) => {
     const user = socket.user;
-
-    // שימוש בלוגר הנקי במקום console.log ארוך
     logger.socketConnect(user, socket.id);
 
-    // --- אירועים ---
-
-    socket.on('join_room', ({ gameId }) => {
-      if (!gameId) {
-        logger.error(`User ${user.username} tried to join without gameId`);
-        return;
-      }
-
-      socket.join(gameId);
-      // לוג ייעודי להצטרפות
-      logger.socketJoin(user, gameId);
-
-      // אופציונלי: שליחת הודעה חזרה
-      socket.emit('system_message', { msg: `Joined ${gameId}` });
-    });
+    // אנחנו שולחים לה את ה-io וה-socket כדי שתדע עם מי לדבר
+    registerGameHandlers(io, socket);
 
     socket.on('disconnect', (reason) => {
       logger.socketDisconnect(user, socket.id, reason);

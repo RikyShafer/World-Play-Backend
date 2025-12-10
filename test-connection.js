@@ -1,88 +1,67 @@
 // test-connection.js
 import { io } from 'socket.io-client';
-import fetch from 'node-fetch'; // אם אין לך, ייתכן שתצטרך להריץ npm install node-fetch או להשתמש ב-fetch המובנה ב-Node 18+
+import fetch from 'node-fetch';
 
-const BASE_URL = 'http://localhost:8080'; // ודא שזה הפורט שלך
+const BASE_URL = 'http://localhost:8080/api';
 const SOCKET_URL = 'http://localhost:8080';
 
-// משתמש זמני לבדיקה )
-const TEST_USER = {
-  username: 'TestPlayer',
-  email: `test${Math.floor(Math.random() * 1000)}@example.com`,
-  password: 'password123',
+const REAL_USER = {
+  email: 'UserB@example.com', // האימייל האמיתי שב-DB
+  password: 'UserB', // הסיסמה האמיתית
 };
 
-async function runTest() {
-  console.log('🔵 Starting System Check...');
+const REAL_GAME_ID = 'd5c82d47-a0a7-47d6-80d3-7fdaea0382f1';
 
+async function runTest() {
+  console.log('🔵 Starting Real-Data Check...');
   let token;
 
-  // 1. נסיון הרשמה/התחברות כדי להשיג טוקן
   try {
-    console.log('1️⃣ Registering User...');
-    const regRes = await fetch(`${BASE_URL}/api/users/register`, {
+    // שלב 1: התחברות (Login) במקום הרשמה
+    console.log('1️⃣ Logging in...');
+    const loginRes = await fetch(`${BASE_URL}/users/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(TEST_USER),
+      body: JSON.stringify(REAL_USER),
     });
 
-    const regData = await regRes.json();
+    const loginData = await loginRes.json();
+    if (!loginRes.ok) throw new Error(loginData.message || 'Login failed');
 
-    if (regRes.ok) {
-      token = regData.token;
-      console.log('✅ Registration Successful. Token received.');
-    } else {
-      console.log('⚠️ User might exist, trying login...');
-      // Login fallback
-      const loginRes = await fetch(`${BASE_URL}/users/auth/login`, {
-        // ודא שהנתיב תואם
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: TEST_USER.email,
-          password: TEST_USER.password,
-        }),
-      });
-      const loginData = await loginRes.json();
-      if (!loginRes.ok) throw new Error(loginData.message);
-      token = loginData.token;
-      console.log('✅ Login Successful. Token received.');
-    }
+    token = loginData.token;
+    console.log('✅ Login Successful. Token received.');
   } catch (error) {
-    console.error(error);
     console.error('❌ Auth Failed:', error.message);
     return;
   }
 
-  // 2. חיבור לסוקט עם הטוקן
-  console.log('2️⃣ Connecting to Socket.io with Token...');
-
-  const socket = io(SOCKET_URL, {
-    auth: {
-      token: token, // שליחת הטוקן בחיבור
-    },
-  });
+  // שלב 2: סוקט
+  console.log('2️⃣ Connecting to Socket...');
+  const socket = io(SOCKET_URL, { auth: { token } });
 
   socket.on('connect', () => {
     console.log(`✅ Socket Connected! ID: ${socket.id}`);
 
-    // 3. בדיקת שליחת אירוע
-    console.log("3️⃣ Emitting 'join_room'...");
-    socket.emit('join_room', { gameId: 'test-game-123' });
+    // שלב 3: שליחת ID אמיתי
+    console.log(`3️⃣ Joining Real Game: ${REAL_GAME_ID}...`);
+    // שינוי תפקיד למארח (HOST) כדי שהשרת יזהה אותך נכון
+    socket.emit('join_room', {
+      gameId: REAL_GAME_ID,
+      role: 'HOST',
+    });
   });
 
-  socket.on('connect_error', (err) => {
-    console.error(err);
-    console.error(`❌ Socket Connection Error: ${err.message}`);
-    process.exit(1);
+  // האזנה להודעות הצלחה
+  socket.on('system_message', (data) => console.log(`📩 System: ${data.msg}`));
+
+  // האזנה לעדכוני חדר (החלק המעניין!)
+  socket.on('room_update', (data) => {
+    console.log(`🔥 LIVE UPDATE: User ${data.username} joined as ${data.role}`);
   });
 
-  // אופציונלי: האזנה לאירועים מהשרת אם הוספת כאלו
-  // socket.on("participant_joined", (data) => console.log("📩 Server says:", data));
-  setTimeout(() => {
-    console.log('🏁 Test Finished. Closing connection.');
-    socket.disconnect();
-  }, 3000);
+  socket.on('error', (data) =>
+    console.error(`❌ Error from server: ${data.msg}`)
+  );
 }
 
 runTest();
