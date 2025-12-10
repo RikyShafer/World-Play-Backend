@@ -10,7 +10,7 @@ const REAL_USER = {
   password: 'UserB', // הסיסמה האמיתית
 };
 
-const REAL_GAME_ID = 'd5c82d47-a0a7-47d6-80d3-7fdaea0382f1';
+const REAL_GAME_ID = '0316d6d8-17e0-4354-905b-5c0f47e6d532';
 
 async function runTest() {
   console.log('🔵 Starting Real-Data Check...');

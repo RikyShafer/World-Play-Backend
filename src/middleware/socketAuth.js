@@ -5,8 +5,7 @@ const prisma = new PrismaClient();
 
 export const socketAuth = async (socket, next) => {
   // 1. קבלת הטוקן
-  const token = socket.handshake.auth.token;
-
+  const token = socket.handshake.auth.token || socket.handshake.headers.token;
   if (!token) {
     return next(new Error('Not authorized: No token provided'));
   }
@@ -15,8 +14,7 @@ export const socketAuth = async (socket, next) => {
     // 2. פענוח ראשוני (בדיקה שהטוקן חתום ע"י השרת שלנו)
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // 3.  בדיקה מול ה-DB: האם המשתמש באמת קיים? 🛑
-    // אנו שולפים רק את השדות הנחוצים לביצועים מהירים
+    //3. שליפת פרטי המשתמש מה-DB
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
       select: {
