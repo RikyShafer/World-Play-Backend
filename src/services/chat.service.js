@@ -1,6 +1,6 @@
 // chat.service.js
 import { PrismaClient } from '@prisma/client';
-import validationService from './validation.service.js'; // הייבוא של השירות
+import * as gameRules from '../services/validation.service.js';
 const prisma = new PrismaClient();
 
 const chatService = {
@@ -8,7 +8,7 @@ const chatService = {
    * שליפת היסטוריית צ'אט
    */
   async fetchChatHistory(myUserId, otherUserId) {
-    await validationService.ensureChatParticipantsExist(myUserId, otherUserId);
+    await gameRules.ensureChatParticipantsExist(myUserId, otherUserId);
 
     const messages = await prisma.chatMessage.findMany({
       where: {
@@ -39,8 +39,8 @@ const chatService = {
    * יצירת הודעה חדשה
    */
   async createChatMessage(senderId, receiverId, messageText) {
-    validationService.validateNonEmptyText(messageText, 'Message text');
-    await validationService.ensureChatParticipantsExist(senderId, receiverId);
+    gameRules.validateNonEmptyText(messageText, 'Message text');
+    await gameRules.ensureChatParticipantsExist(senderId, receiverId);
 
     return await prisma.chatMessage.create({
       data: {

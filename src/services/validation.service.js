@@ -1,15 +1,23 @@
 import { PrismaClient } from '@prisma/client';
+
 const prisma = new PrismaClient();
 
+// הגדרת אובייקט השירות שמרכז את כל פונקציות הוולידציה
 const validationService = {
   // --- בדיקות קיום (Existence) ---
 
+  /**
+   * בדיקה שמשחק קיים במערכת
+   */
   async ensureGameExists(gameId) {
     const game = await prisma.game.findUnique({ where: { id: gameId } });
     if (!game) throw new Error('Game not found');
     return game;
   },
 
+  /**
+   * בדיקה שסטרים קיים במערכת
+   */
   async ensureStreamExists(streamId) {
     const stream = await prisma.stream.findUnique({ where: { id: streamId } });
     if (!stream) throw new Error('Stream not found');
@@ -46,6 +54,14 @@ const validationService = {
     if (existingUser) {
       throw new Error('משתמש עם אימייל זה כבר קיים.');
     }
+  },
+
+  async ensureNotificationExists(notificationId) {
+    const notification = await prisma.notification.findUnique({
+      where: { id: notificationId },
+    });
+    if (!notification) throw new Error('Notification not found');
+    return notification;
   },
 
   // --- בדיקות סטטוס משחק ---
@@ -116,6 +132,7 @@ const validationService = {
   // --- ולידציות מורכבות להצטרפות ---
 
   async validateJoinEligibility(gameId, userId, requestedRole) {
+    // שימוש בפונקציה מתוך האובייקט הנוכחי באמצעות this
     const game = await this.ensureGameExists(gameId);
 
     if (game.status === 'FINISHED') {
@@ -200,8 +217,8 @@ const validationService = {
       throw new Error('You cannot send a message to yourself');
     }
     await Promise.all([
-      this.ensureUserExists(senderId),
-      this.ensureUserExists(receiverId),
+      this.ensureUserExists(senderId), // שימוש ב-this
+      this.ensureUserExists(receiverId), // שימוש ב-this
     ]);
   },
 
@@ -213,14 +230,15 @@ const validationService = {
   getSignificantInteractionRules() {
     return [{ duration: { gt: 60 } }, { participationPercent: { gt: 0.2 } }];
   },
-
-  async ensureNotificationExists(notificationId) {
-    const notification = await prisma.notification.findUnique({
-      where: { id: notificationId },
-    });
-    if (!notification) throw new Error('Notification not found');
-    return notification;
-  },
 };
 
+// ייצוא כלים נפוצים לשימוש קל יותר (Destructuring)
+export const {
+  ensureGameExists,
+  ensureStreamExists,
+  ensureUserExists,
+  ensureNotificationExists,
+} = validationService;
+
+// ייצוא ברירת המחדל של אובייקט השירות המלא
 export default validationService;

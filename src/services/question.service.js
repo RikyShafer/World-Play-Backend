@@ -1,4 +1,4 @@
-import validationService from './validation.service.js';
+import * as gameRules from '../services/validation.service.js';
 import permissionsService from './permissions.service.js';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
@@ -9,9 +9,9 @@ const questionService = {
    */
   async createQuestion(gameId, userId, { questionText, rewardType, options }) {
     // 1. בדיקות ולידציה בסיסיות
-    const game = await validationService.ensureGameExists(gameId);
-    validationService.validateGameIsActive(game);
-    validationService.validateQuestionData(questionText, options);
+    const game = await gameRules.ensureGameExists(gameId);
+    gameRules.validateGameIsActive(game);
+    gameRules.validateQuestionData(questionText, options);
     await permissionsService.ensureModerator(gameId, userId);
     // 2. יצירת השאלה עם האופציות בטרנזקציה אחת
 

@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import validationService from './validation.service.js'; // ייבוא ה-Validation
+import * as gameRules from '../services/validation.service.js';
 const prisma = new PrismaClient();
 
 const analyticsService = {
@@ -11,8 +11,7 @@ const analyticsService = {
 
     // 1. שימוש בפונקציה קיימת: וידוא קיום המשחק ושליפת הנתונים שלו
     // הפונקציה הזו (מהקובץ validation) כבר מחזירה את ה-game אם הוא קיים
-    const game = await validationService.ensureGameExists(gameId);
-
+    const game = await gameRules.ensureGameExists(gameId);
     // 2. חישוב אחוזי השתתפות (לוגיקה עסקית פשוטה שנשארת כאן)
     let participationPercent = 0;
     if (totalQuestions > 0) {

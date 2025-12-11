@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import validationService from './validation.service.js'; // ייבוא ה-Validation
+import * as gameRules from '../services/validation.service.js';
 
 const prisma = new PrismaClient();
 
@@ -9,7 +9,7 @@ const notificationService = {
    */
   async fetchUserNotifications(userId, filter) {
     // 1. ולידציה: האם המשתמש קיים?
-    await validationService.ensureUserExists(userId);
+    await gameRules.ensureUserExists(userId);
 
     const whereCondition = {
       userId: userId,
@@ -37,7 +37,7 @@ const notificationService = {
    */
   async updateNotificationReadStatus(notificationId) {
     // 1. ולידציה: האם ההתראה קיימת?
-    await validationService.ensureNotificationExists(notificationId);
+    await gameRules.ensureNotificationExists(notificationId);
 
     return await prisma.notification.update({
       where: { id: notificationId },
@@ -53,10 +53,10 @@ const notificationService = {
    */
   async createNewNotification(userId, type, content) {
     // 1. ולידציה: האם המשתמש קיים?
-    await validationService.ensureUserExists(userId);
+    await gameRules.ensureUserExists(userId);
 
     // 2. ולידציה: האם התוכן תקין? (שימוש בפונקציה הקיימת)
-    validationService.validateNonEmptyText(content, 'Notification content');
+    gameRules.validateNonEmptyText(content, 'Notification content');
 
     return await prisma.notification.create({
       data: {

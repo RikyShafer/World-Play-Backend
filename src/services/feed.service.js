@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import validationService from './validation.service.js'; // 1. מייבאים את ה-Validation המתוקן
+import * as gameRules from '../services/validation.service.js'; // ודאי שהקובץ הזה קיים בתיקיית services
 
 const prisma = new PrismaClient();
 
@@ -8,7 +8,7 @@ const feedService = {
 
   async fetchActiveStreams(userId) {
     // שלב מקדים: מוודאים שהמשתמש קיים בכלל (מונע קריסות)
-    await validationService.ensureUserExists(userId);
+    await gameRules.ensureUserExists(userId);
 
     // שלב א: מזהים אחרי מי המשתמש עוקב
     const following = await prisma.follow.findMany({
@@ -19,7 +19,7 @@ const feedService = {
 
     // שלב ב: מזהים מארחים שמעניינים את המשתמש
     // שינוי: לוקחים את החוקים (60 שניות / 20%) מתוך ה-Validation Service
-    const interestRules = validationService.getSignificantInteractionRules();
+    const interestRules = gameRules.getSignificantInteractionRules();
 
     const interestLogs = await prisma.viewLog.findMany({
       where: {
@@ -36,16 +36,16 @@ const feedService = {
 
     // שלב ג: מחברים את שתי הרשימות ומוחקים כפילויות
     // שינוי: שימוש בפונקציית העזר החדשה שיצרנו
-    const targetHostIds = validationService.mergeUniqueIds(
+    const targetHostIds = gameRules.mergeUniqueIds(
       followingIds,
       recommendedHostIds
     );
 
-    // שלב ד: שולפים את השידורים (נשאר אותו דבר)
+    // שלב ד: שולפים רק את השידורים של האנשים ברשימה
     const liveStreams = await prisma.stream.findMany({
       where: {
         status: 'LIVE',
-        hostId: { in: targetHostIds },
+        hostId: { in: targetHostIds }, // <--- הסינון החשוב
       },
       include: {
         host: true,
@@ -54,7 +54,7 @@ const feedService = {
       orderBy: { startTime: 'desc' },
     });
 
-    // (אופציונלי) פולבאק לשידורים פופולריים אם הכל ריק
+    // (אופציונלי) אם הרשימה ריקה, אפשר להחזיר סתם שידורים פופולריים כדי שהפיד לא יהיה ריק
     if (liveStreams.length === 0) {
       return await prisma.stream.findMany({
         where: { status: 'LIVE' },
