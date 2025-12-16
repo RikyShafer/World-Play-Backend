@@ -45,13 +45,15 @@ app.use('/api/chat', chatRoutes);
 app.get('/', (req, res) => {
   res.send('Live Game Streaming Backend is Running!');
 });
+console.log('👉 STEP 1: About to init socket'); // בדיקה 1
 
-// אנחנו שולחים את ה-server שיצרנו כדי שהסוקט "ירכב" עליו
+// אתחול הסוקט
 const io = initializeSocketIO(server);
 
-// הופכים את io לזמין בכל הראוטרים (למשל: req.app.get('io'))
+console.log('👉 STEP 2: Socket init passed'); // בדיקה 2
+
 app.set('io', io);
 
 server.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`✅ Server is running on http://localhost:${PORT}`);
 });
