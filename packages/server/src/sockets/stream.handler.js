@@ -1,4 +1,3 @@
-// src/sockets/stream.handler.js
 import * as msService from '../services/mediasoup.service.js';
 import { logger } from '../utils/logger.js';
 

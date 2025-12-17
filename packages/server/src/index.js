@@ -18,9 +18,21 @@ import corsOptions from './config/corsOptions.js';
 import { initializeSocketIO } from './services/socket.service.js';
 import { createWorkers } from './services/mediasoup.service.js';
 
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// הגדרת נתיבים (בגלל שאת ב-ES Modules)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// ... (אחרי יצירת ה-app)
+const app = express();
+
+// הוספי את השורה הזו: הגדרת התיקייה public כסטטית
+app.use(express.static(path.join(__dirname, '../public')));
+app.use('/libs', express.static(path.join(__dirname, '../node_modules')));
 dotenv.config();
 
-const app = express();
 // מוגדר כ-server
 const server = http.createServer(app);
 

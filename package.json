@@ -5,6 +5,7 @@
     "packages/*"
   ],
   "dependencies": {
-    "@worldplay/shared": "^1.0.0"
+    "@worldplay/shared": "^1.0.0",
+    "mediasoup-client": "^3.18.3"
   }
 }

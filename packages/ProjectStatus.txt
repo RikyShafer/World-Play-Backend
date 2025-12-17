@@ -1,0 +1,65 @@
+בשמחה! זה רעיון מצוין.
+הנה **"הודעת השחזור"** שלך. תשמרי אותה בקובץ טקסט בצד (למשל `ProjectStatus.txt`).
+אם השיחה תתנתק, פשוט תעתיקי את הטקסט הזה לפרומפט החדש, ואני אדע בדיוק איפה עצרנו ומה המבנה הטכני שלך.
+
+---
+
+### 💾 הודעת שחזור מצב ("Save Point")
+
+*(העתיקי מכאן)*
+
+**פרויקט: Live Trivia Game Platform (Monorepo)**
+**סטטוס נוכחי: WebRTC Core Implementation**
+
+**טכנולוגיות:**
+
+* **Backend:** Node.js, Express, Socket.io (v4), Mediasoup (v3), Prisma, PostgreSQL.
+* **Client:** React Native (Expo), mediasoup-client.
+* **Dev:** Windows, ES Modules (`import`), TypeScript (partial).
+
+**מה בוצע עד כה (Backend):**
+
+1. **תשתית Mediasoup:** הותקנה ומוגדרת. Workers עולים בהצלחה באתחול השרת.
+2. **שירותים:**
+* `src/config.js`: הגדרות RTP, Codecs (VP8), IPs.
+* `src/services/mediasoup.service.js`: ניהול Workers, Routers, Transports.
+* `src/sockets/stream.handler.js`: מטפל באירועי סוקט (`createRoom`, `produce`, `consume`).
+
+
+3. **בדיקות:** בוצעה בדיקה מוצלחת של שידור וידאו (Loopback) באמצעות קובץ `public/index.html` מקומי (עם סקריפט `build-lib.js` שיצר את ספריית הקליינט).
+4. **מצב הקוד:** כרגע הקוד ב-Handler עובד עם משתנים בזיכרון (`rooms`, `producers`) ועקפנו זמנית את ה-Auth לצורך בדיקת ה-HTML.
+
+**מה בוצע עד כה (Client):**
+
+1. נוצרה אפליקציית Expo חדשה ב-`packages/client`.
+2. הותקנו `mediasoup-client`, `react-native-webrtc`.
+3. הוגדר `app.json` עם הרשאות מצלמה/מיקרופון.
+4. נכתבו `MediasoupClient.js` (לוגיקה) ו-`BroadcastScreen.js` (ממשק), אך טרם נבדקו מול השרת בגלל מגבלות אימולטור.
+
+**הנקודה המדויקת לעצירה:**
+סיימנו לוודא שהוידאו עובר בשרת. כעת אנו עומדים לפני שלב חיבור הלוגיקה העסקית (DB Update) בתוך `stream.handler.js` והחזרת מנגנון האבטחה (Auth).
+
+---
+
+### 🗺️ מה השלב הבא? (Roadmap)
+
+עכשיו כשה"ברזלים" עובדים (יש וידאו), אנחנו צריכים להפוך את זה מ"ניסוי טכני" ל"פיצ'ר במוצר". הנה הסדר:
+
+1. **חיבור ל-DB ולוגיקה עסקית (המשימה הבאה מיד):**
+* בתוך `stream.handler.js`: כשווידאו מתחיל (`produce`), נעדכן בטבלת `Stream` ב-PostgreSQL שהסטטוס הוא `LIVE`.
+* לוודא ש-`gameId` הוא אמיתי ולא סתם טקסט.
+* להחזיר את ה-Auth Middleware (לבטל את העקיפה שעשינו לטובת ה-HTML).
+
+
+2. **חיבור אפליקציית ה-Client:**
+* לוודא שהאפליקציה ב-React Native מצליחה להתחבר לשרת (עכשיו כשהוא מאובטח).
+* לוודא שרואים וידאו מהמכשיר הנייד (ולא רק מהדפדפן).
+
+
+3. **צד הצופה (Consumer):**
+* עד עכשיו עבדנו רק על ה-Host (משדר).
+* צריך לממש את הצד של הצופה: לקבל רשימת משחקים חיים, להצטרף לחדר, ולעשות `consume` כדי לראות את השידור.
+
+
+
+**מוכנה? תגידי מתי, ונצלול לחיבור של ה-DB!** 🛠️

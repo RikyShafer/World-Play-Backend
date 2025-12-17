@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Live Stream Test Lab 🧪</title>
+    <style>
+        body { font-family: sans-serif; background: #222; color: white; display: flex; flex-direction: column; align-items: center; }
+        video { width: 400px; height: 300px; background: black; border: 2px solid red; margin: 20px; transform: scaleX(-1); }
+        button { padding: 10px 20px; font-size: 18px; cursor: pointer; background: #e74c3c; color: white; border: none; border-radius: 5px; }
+        #logs { width: 80%; height: 150px; background: #111; border: 1px solid #444; overflow-y: scroll; padding: 10px; font-family: monospace; }
+        .status { color: #f1c40f; }
+    </style>
+    
+    <script src="/socket.io/socket.io.js"></script>
+
+<script src="mediasoup-client.min.js"></script>
+</head>
+<body>
+
+    <h1>📡 Server Test Lab</h1>
+    <h3 id="connectionStatus" class="status">Disconnected</h3>
+    
+    <video id="localVideo" autoplay playsinline muted></video>
+    <button onclick="startBroadcast()" id="btnStream">Start Broadcasting</button>
+    
+    <h3>Server Logs:</h3>
+    <div id="logs"></div>
+
+    <script>
+        const socket = io();
+        let device;
+        let producerTransport;
+        let producer;
+
+        const log = (msg, isError = false) => {
+            const div = document.getElementById('logs');
+            div.innerHTML += `<span style="color: ${isError ? 'red' : '#0f0'}">> ${msg}</span><br>`;
+            div.scrollTop = div.scrollHeight;
+            console.log(msg);
+        };
+
+        socket.on('connect', () => {
+            document.getElementById('connectionStatus').innerText = "Connected to Socket ✅";
+            document.getElementById('connectionStatus').style.color = "#2ecc71";
+            log('Connected to server!');
+        });
+
+        async function startBroadcast() {
+            try {
+                // בדיקה האם הספרייה נטענה לפני שמתחילים
+                // תיקון 2: שימוש ב-MediasoupClient (אות גדולה)
+                if (typeof MediasoupClient === 'undefined') {
+                    throw new Error('MediasoupClient library not loaded! Check /libs path.');
+                }
+
+                document.getElementById('btnStream').disabled = true;
+                log('Requesting camera access...');
+                
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                document.getElementById('localVideo').srcObject = stream;
+
+                const gameId = 'web-test-room';
+                log('Creating room on server...');
+                
+                socket.emit('stream:create_room', { gameId }, async (res) => {
+                    if (res.error) return log('Error creating room: ' + res.error, true);
+                    
+                    try {
+                        log('Loading Mediasoup Device...');
+                        console.log('RTP Capabilities:', res.rtpCapabilities);
+                        
+                        // תיקון 3: שימוש באות גדולה M
+                        device = new MediasoupClient.Device();
+                        
+                        await device.load({ routerRtpCapabilities: res.rtpCapabilities });
+                        log('Device Loaded Successfully! ✅'); 
+
+                    } catch (deviceError) {
+                        log('CRITICAL ERROR loading device: ' + deviceError.message, true);
+                        console.error(deviceError);
+                        return;
+                    }
+
+                    log('Creating Transport...');
+                    socket.emit('stream:create_transport', { gameId }, async (transportParams) => {
+                        if (transportParams.error) return log('Error transport: ' + transportParams.error, true);
+
+                        try {
+                            producerTransport = device.createSendTransport(transportParams);
+
+                            producerTransport.on('connect', ({ dtlsParameters }, callback, errback) => {
+                                socket.emit('stream:connect_transport', { 
+                                    transportId: producerTransport.id, 
+                                    dtlsParameters 
+                                }, callback);
+                            });
+
+                            producerTransport.on('produce', ({ kind, rtpParameters }, callback, errback) => {
+                                socket.emit('stream:produce', { 
+                                    transportId: producerTransport.id, 
+                                    kind, 
+                                    rtpParameters,
+                                    gameId 
+                                }, ({ id }) => callback({ id }));
+                            });
+
+                            log('Starting Produce...');
+                            const videoTrack = stream.getVideoTracks()[0];
+                            producer = await producerTransport.produce({ track: videoTrack });
+                            
+                            log(`🎥 WE ARE LIVE! Producer ID: ${producer.id}`);
+                            document.getElementById('btnStream').innerText = "Broadcasting...";
+                            document.getElementById('btnStream').style.backgroundColor = "green";
+                        } catch (produceError) {
+                            log('Produce Error: ' + produceError.message, true);
+                        }
+                    });
+                });
+
+            } catch (err) {
+                log('General Error: ' + err.message, true);
+                document.getElementById('btnStream').disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
