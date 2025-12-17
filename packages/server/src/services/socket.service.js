@@ -2,7 +2,7 @@ import { Server } from 'socket.io';
 import { socketAuth } from '../middleware/socketAuth.js';
 import { logger } from '../utils/logger.js';
 import { registerGameHandlers } from '../sockets/game.handler.js';
-
+import { registerStreamHandlers } from '../sockets/stream.handler.js';
 export const initializeSocketIO = (httpServer) => {
   // בדיקה 1: האם נכנסנו לפונקציה?
   console.log('socket.service.js -> STARTING INIT');
@@ -24,7 +24,7 @@ export const initializeSocketIO = (httpServer) => {
     logger.socketConnect(user, socket.id);
 
     registerGameHandlers(io, socket);
-
+    registerStreamHandlers(io, socket);
     socket.on('disconnect', (reason) => {
       logger.socketDisconnect(user, socket.id, reason);
     });
