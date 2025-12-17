@@ -4,7 +4,6 @@ const prisma = new PrismaClient();
 
 const userAnswerService = {
   async submitAnswer(userId, { questionId, selectedOptionId, wager = 0 }) {
-    // ... שאר הקוד נשאר אותו דבר ...
     const question = await prisma.question.findUnique({
       where: { id: questionId },
       include: { game: true },
