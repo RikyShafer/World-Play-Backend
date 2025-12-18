@@ -1,3 +1,4 @@
+// stream.controller.js
 import streamService from '../services/stream.service.js';
 import gameService from '../services/game.service.js'; // חובה להוסיף את הייבוא הזה!
 

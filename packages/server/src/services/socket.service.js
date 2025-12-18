@@ -14,19 +14,10 @@ export const initializeSocketIO = (httpServer) => {
 
   console.log('socket.service.js -> IO Created');
 
-  // 👇 שינוי 1: שמנו את בדיקת האבטחה בהערה זמנית
-  // io.use(socketAuth); 
+  io.use(socketAuth); 
 
   io.on('connection', (socket) => {
     console.log('socket.service.js -> NEW CONNECTION:', socket.id);
-
-    // 👇 שינוי 2: אם אין משתמש (כי ביטלנו אבטחה), ניצור משתמש אורח פיקטיבי
-    // זה קריטי כדי שהלוגים בהמשך לא יקרסו
-    socket.user = socket.user || { 
-        id: 'guest_' + socket.id.substr(0, 4), 
-        username: 'Guest Tester', 
-        role: 'PLAYER' 
-    };
 
     const user = socket.user;
     logger.socketConnect(user, socket.id);

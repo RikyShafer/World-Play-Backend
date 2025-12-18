@@ -1,3 +1,4 @@
+// stream.service.js
 import { PrismaClient } from '@prisma/client';
 // וודא שבקובץ validation.service יש פונקציות עם export לפני השם שלהן
 import * as gameRules from '../services/validation.service.js';
@@ -6,7 +7,6 @@ const prisma = new PrismaClient();
 
 const streamService = {
   async createStream(hostId, { title }) {
-    // השגיאה קרתה כאן כי gameRules.validateUserHasNoActiveStream היה undefined
     await gameRules.validateUserHasNoActiveStream(hostId);
 
     return await prisma.stream.create({
