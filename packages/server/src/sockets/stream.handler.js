@@ -100,6 +100,9 @@ export const registerStreamHandlers = (io, socket) => {
 
       logger.info(`🎥 New Producer (${kind}) for Stream: ${streamId}`);
 
+      if (streams[streamId]) {
+          streams[streamId].producerId = producer.id; // <--- הנה זה! שומרים אותו למי שיבוא אחר כך
+      }
       // עדכון צופים
       socket.to(streamId).emit('stream:new_producer', { producerId: producer.id });
 
@@ -171,6 +174,33 @@ export const registerStreamHandlers = (io, socket) => {
 
     } catch (error) {
       logger.error('Error consuming:', error);
+      callback({ error: error.message });
+    }
+  });
+  // --- אירוע: הצטרפות צופה לסטרים (הקוד המתוקן) ---
+  socket.on('stream:join', async ({ streamId }, callback) => {
+    try {
+      const streamRoom = streams[streamId];
+      
+      // אם הסטרים עדיין לא נוצר ע"י המארח
+      if (!streamRoom) {
+        return callback({ error: 'Stream is not live yet' });
+      }
+
+      logger.info(`👋 Viewer joining stream: ${streamId}`);
+
+      // 1. קודם כל מכניסים את הסוקט לחדר (כדי שיקבל עדכונים עתידיים)
+      socket.join(streamId);
+
+      // 2. מחזירים תשובה אחת מסודרת לקליינט
+      callback({ 
+        rtpCapabilities: streamRoom.router.rtpCapabilities,
+        // התיקון הקריטי שעשינו קודם - שליחת ה-ID אם השידור כבר התחיל
+        currentProducerId: streamRoom.producerId || null 
+      });
+
+    } catch (error) {
+      logger.error('Error joining stream:', error);
       callback({ error: error.message });
     }
   });
