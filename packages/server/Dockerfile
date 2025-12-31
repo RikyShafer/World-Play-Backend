@@ -1,19 +1,28 @@
 FROM node:20-alpine
-
 WORKDIR /usr/src/app
 
-ENV NODE_TLS_REJECT_UNAUTHORIZED=0
-
+# התקנת openssl עבור פריזמה
 RUN apk add --no-cache openssl
 
-COPY package*.json ./
+# 1. העתקת קבצי ההגדרות מכל המקומות (שורש, שרת, ו-shared)
+COPY package.json ./
+COPY packages/server/package*.json ./packages/server/
+COPY packages/shared/package*.json ./packages/shared/
 
+# 2. התקנת כל התלויות (זה יתקין גם את השרת וגם את shared ויקשר ביניהם)
 RUN npm install
 
-COPY . .
+# 3. העתקת הקוד של shared (חובה כדי שהשרת יוכל להשתמש בו)
+COPY packages/shared/ ./packages/shared/
 
-RUN npx prisma generate
+# 4. העתקת קוד השרת
+COPY packages/server/ ./packages/server/
 
-EXPOSE ${PORT}
+# 5. יצירת Prisma Client
+RUN npx prisma generate --schema=./packages/server/prisma/schema.prisma
+
+# 6. הגדרת תיקיית עבודה להרצה
+WORKDIR /usr/src/app/packages/server
+EXPOSE 3000
 
 CMD ["npm", "start"]

@@ -1,10 +1,7 @@
 {
-  "name": "world-play-monorepo",
+  "name": "world-play-root",
   "private": true,
   "workspaces": [
     "packages/*"
-  ],
-  "dependencies": {
-    "@worldplay/shared": "^1.0.0"
-  }
+  ]
 }

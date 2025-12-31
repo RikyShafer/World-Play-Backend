@@ -19,13 +19,13 @@ import corsOptions from './config/corsOptions.js';
 import { initializeSocketIO } from './services/socket.service.js';
 
 dotenv.config();
-
+dotenv.config({ path: '../../.env' });
 const app = express();
 // מוגדר כ-server
 const server = http.createServer(app);
 
 // הגדרת פורט
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 2081;
 
 // --- Middleware ---
 app.use(express.json());
