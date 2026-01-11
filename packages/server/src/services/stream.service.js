@@ -5,6 +5,53 @@ import * as gameRules from '../services/validation.service.js';
 const prisma = new PrismaClient();
 
 const streamService = {
+
+  async startStream(streamId, inputPipe, res) {
+        if (activeStreams.has(streamId)) {
+            throw new Error('Stream already exists');
+        }
+
+        console.log(`📡 Ingesting stream ${streamId} and relaying to internal RTP`);
+
+        // הגדרת פורט ייחודי לכל סטרים (למשל, מתחילים מ-5004)
+        const rtpPort = 5000 + Math.floor(Math.random() * 1000); 
+        const rtpUrl = `rtp://127.0.0.1:${rtpPort}`;
+
+        const ffmpeg = spawn('ffmpeg', [
+            '-i', 'pipe:0',                   // קלט מהדפדפן/טרמינל
+            '-c:v', 'libx264',                // קידוד וידאו
+            '-preset', 'ultrafast',           // מהירות מקסימלית
+            '-tune', 'zerolatency',           // אופטימיזציה לאפס דיליי
+            '-c:a', 'aac',                    // קידוד אודיו
+            '-f', 'rtp',                      // פורמט היציאה: RTP
+            rtpUrl                            // הכתובת הפנימית
+        ]);
+
+        activeStreams.set(streamId, {
+            ffmpeg,
+            rtpUrl,
+            rtpPort,
+            startTime: Date.now()
+        });
+
+        // עדכון הבאקנד שהשידור התחיל (כמו שעשינו קודם)
+        this.notifyBackend(streamId, 'LIVE');
+
+        inputPipe.pipe(ffmpeg.stdin);
+
+        ffmpeg.stderr.on('data', (data) => {
+            // לוגים לבקרה
+            if (data.toString().includes('error')) {
+                console.error(`⚠️ FFmpeg [${streamId}]:`, data.toString());
+            }
+        });
+
+        ffmpeg.on('close', (code) => {
+            console.log(`🛑 Stream relay ${streamId} stopped (code: ${code})`);
+            activeStreams.delete(streamId);
+            this.notifyBackend(streamId, 'FINISHED');
+        });
+    },
   async createStream(hostId, { title }) {
     await gameRules.validateUserHasNoActiveStream(hostId);
 
@@ -16,6 +63,7 @@ const streamService = {
       },
     });
   },
+
 
   async updateStreamStatus(streamId, userId, newStatus) {
     const stream = await prisma.stream.findUnique({

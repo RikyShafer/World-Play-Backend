@@ -1,6 +1,5 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import path from 'path';
 import streamRoutes from './src/routes/streamRoutes.js';
 import { StreamService } from './src/services/streamService.js';
 

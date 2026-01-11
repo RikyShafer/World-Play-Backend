@@ -3,6 +3,23 @@ import streamService from '../services/stream.service.js';
 import gameService from '../services/game.service.js';
 
 const streamController = {
+
+
+    async start(req, res) {
+        const { streamId } = req.params;
+
+        try {
+            // ה-Service שכתבת מקבל את ה-streamId ואת ה-req (כ-inputPipe)
+            await StreamService.startStream(streamId, req, res);
+            
+            console.log(`📹 Stream ingest started: ${streamId}`);
+            
+            // אנחנו לא סוגרים את ה-res כאן, כי ה-Service יסגור אותו כש-FFmpeg יסיים
+        } catch (error) {
+            console.error(`❌ Controller Error: ${error.message}`);
+            res.status(500).json({ error: error.message });
+        }
+    }  ,
     // POST /api/streams
     async createStream(req, res) {
         try {
