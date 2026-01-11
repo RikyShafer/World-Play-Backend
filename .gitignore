@@ -24,3 +24,10 @@ npm-debug.log*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Local scripts
+test.sh
+
+# Media files
+*.mp4
+packages/media-server/*.mp4
