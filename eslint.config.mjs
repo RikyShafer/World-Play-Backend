@@ -1,20 +1,36 @@
 import js from '@eslint/js';
 import globals from 'globals';
-import { defineConfig } from 'eslint/config';
+import prettierConfig from 'eslint-config-prettier';
+import prettierPlugin from 'eslint-plugin-prettier';
 
-export default defineConfig([
+export default [
   {
     ignores: [
-      'prisma/**/*',
-      'node_modules/**/*',
-      '*.json', // Ignore JSON files
-      '*.md', // Ignore Markdown files
+      '**/node_modules/**',
+      '**/prisma/**',
+      '**/dist/**',
+      '**/build/**',
+      '*.json',
+      '*.md',
     ],
   },
   {
     files: ['**/*.{js,mjs,cjs}'],
-    plugins: { js },
-    extends: ['js/recommended'],
-    languageOptions: { globals: globals.node },
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        ...globals.node,
+        ...globals.browser, // חשוב עבור צד הלקוח (React)
+      },
+    },
+    plugins: {
+      prettier: prettierPlugin,
+    },
+    rules: {
+      ...js.configs.recommended.rules,
+      'prettier/prettier': 'error', // הופך שגיאות פריטייר לשגיאות לינטר
+    },
   },
-]);
+  prettierConfig, // מבטל חוקי ESLINT שמתנגשים עם Prettier
+];
