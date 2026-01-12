@@ -14,7 +14,7 @@ import chatRoutes from './routes/chat.router.js';
 import notificationRoutes from './routes/notification.routes.js';
 import configRoutes from './routes/config.routes.js';
 import statusRoutes from './routes/status.routes.js';
-import corsOptions from './config/corsOptions.js';
+// import corsOptions from './config/corsOptions.js';
 import { initializeSocketIO } from './services/socket.service.js';
 
 dotenv.config();
@@ -51,7 +51,7 @@ async function checkMediaServer() {
             console.log('🔗 [BACKEND-TO-MEDIA] Connection successful:', response.data.status);
             connected = true;
         } catch (error) {
-            console.log('⏳ [BACKEND-TO-MEDIA] Waiting for media server...');
+            console.log('⏳ [BACKEND-TO-MEDIA] Waiting for media server...', error.message);
             await new Promise(resolve => setTimeout(resolve, 3000)); // מחכה 3 שניות לפני ניסיון חוזר
         }
     }

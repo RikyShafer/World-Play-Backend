@@ -34,9 +34,10 @@
     "prettier": "^3.7.4"
   },
   "lint-staged": {
-    "packages/**/*.{js,jsx,ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ]
+  "packages/**/*.{js,mjs,cjs}": [
+    "eslint --fix" 
+  ]
+},
+  "husky": {
   }
 }
