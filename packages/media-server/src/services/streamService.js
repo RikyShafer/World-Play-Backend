@@ -3,8 +3,11 @@ import path from 'path';
 import fs from 'fs';
 import fetch from 'node-fetch'; // ודאי שהספרייה מותקנת ב-media-server
 
+import { createPlainTransport } from './mediasoup.service.js';
+
 const TEMP_DIR = '/usr/src/app/packages/media-server/media_files';
 const activeStreams = new Map();
+
 
 if (!fs.existsSync(TEMP_DIR)) {
     fs.mkdirSync(TEMP_DIR, { recursive: true });
@@ -32,66 +35,59 @@ export const StreamService = {
         }
     },
 
-    async startStream(streamId, inputPipe, res) {
-        if (activeStreams.has(streamId)) {
-            throw new Error('Stream already exists');
+    async startStream(streamId, inputPipe, res, router) {
+    if (activeStreams.has(streamId)) {
+        throw new Error('Stream already exists');
+    }
+
+    // 1. יצירת הטרנספורט הפנימי (ה"גשר") ב-Mediasoup
+    const transport = await createPlainTransport(router);
+
+    // 2. יצירת ה-Producer - זה הזרם שהצופים יצרכו
+    const producer = await transport.produce({
+        kind: 'video',
+        rtpParameters: {
+            codecs: [{
+                mimeType: 'video/VP8', // חייב להתאים לקידוד ב-FFmpeg ובקונפיג
+                payloadType: 101,
+                clockRate: 90000
+            }],
+            encodings: [{ ssrc: 1111 }]
         }
+    });
 
-        const streamPath = path.join(TEMP_DIR, streamId);
-        if (!fs.existsSync(streamPath)) {
-            fs.mkdirSync(streamPath, { recursive: true });
-        }
+    // 3. קבלת הפורט שהמדיסופ פתח עבור ה-FFmpeg
+    const rtpPort = transport.tuple.localPort;
 
-        console.log(`🎬 Creating files in: ${streamPath}`);
+    // 4. הפעלת ה-FFmpeg ושידור לפורט הפנימי של המדיסופ
+    const ffmpeg = spawn('ffmpeg', [
+        '-i', 'pipe:0',
+        '-c:v', 'libvpx',      // קידוד VP8 שמתאים ל-WebRTC
+        '-preset', 'ultrafast',
+        '-tune', 'zerolatency',
+        '-f', 'rtp', `rtp://127.0.0.1:${rtpPort}`
+    ]);
 
-        const ffmpeg = spawn('ffmpeg', [
-            '-i', 'pipe:0',
-            '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency',
-            '-c:a', 'aac',
-            '-f', 'hls', '-hls_time', '2', '-hls_list_size', '5',
-            '-hls_flags', 'append_list',
-            '-hls_segment_filename', path.join(streamPath, 'segment%03d.ts'),
-            path.join(streamPath, 'index.m3u8')
-        ]);
+    // 5. שמירת ה-ProducerId כדי שהסוקט ידע למי לחבר את הצופים
+    activeStreams.set(streamId, {
+        ffmpeg,
+        producerId: producer.id,
+        startTime: Date.now()
+    });
 
-        activeStreams.set(streamId, {
-            ffmpeg,
-            startTime: Date.now(),
-            isPaused: false
-        });
+    // עדכון הבאקנד והזרמת המידע
+    this.notifyBackend(streamId, 'LIVE');
+    inputPipe.pipe(ffmpeg.stdin);
 
-        // ✅ עדכון הבאקנד שהשידור התחיל
-        this.notifyBackend(streamId, 'LIVE');
-
-        inputPipe.pipe(ffmpeg.stdin);
-
-        ffmpeg.stderr.on('data', (data) => {
-            const output = data.toString();
-            if (output.includes('Opening') && output.includes('.ts')) {
-                console.log(`📦 FFmpeg: New segment for ${streamId}`);
-            }
-        });
-
-        ffmpeg.on('close', (code) => {
-            console.log(`🛑 Stream ${streamId} closed (code: ${code})`);
-            activeStreams.delete(streamId);
-            
-            // ✅ עדכון הבאקנד שהשידור הסתיים
-            this.notifyBackend(streamId, 'FINISHED');
-
-            if (res && !res.headersSent) {
-                res.end();
-            }
-        });
-
-        inputPipe.on('error', (err) => {
-            console.error(`❌ Input pipe error [${streamId}]:`, err.message);
-            if (ffmpeg && !ffmpeg.killed) {
-                ffmpeg.kill('SIGTERM');
-            }
-            activeStreams.delete(streamId);
-        });
-    },
+    // טיפול בסגירה
+    ffmpeg.on('close', () => {
+        transport.close(); // סגירת הגשר כשהשידור נגמר
+        this.notifyBackend(streamId, 'FINISHED');
+        activeStreams.delete(streamId);
+    });
+    
+    return producer.id;
+},
 
     stopStream(streamId) {
         const stream = activeStreams.get(streamId);

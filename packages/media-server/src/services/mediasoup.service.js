@@ -27,3 +27,14 @@ export const createRouter = async (worker) => {
 export const createWebRtcTransport = async (router) => {
   return await router.createWebRtcTransport(config.mediasoup.webRtcTransport);
 };
+
+export const createPlainTransport = async (router) => {
+  const transport = await router.createPlainTransport({
+    // מאזינים ל-Localhost כי ה-FFmpeg רץ על אותו שרת (או בתוך אותו קומפוז)
+    listenIp: { ip: '127.0.0.1', announcedIp: null }, 
+    rtcpMux: false, // הגדרה סטנדרטית לעבודה עם FFmpeg
+    comedia: true   // מאפשר לטרנספורט לזהות אוטומטית מאיפה FFmpeg משדר
+  });
+
+  return transport;
+};
