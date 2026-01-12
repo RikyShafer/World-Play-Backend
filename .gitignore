@@ -1,9 +1,7 @@
 # Dependencies
 node_modules/
 packages/*/node_modules/
-packages/*/node_modules/
 
-# Security & Environment
 # Security & Environment
 .env
 .env.*
@@ -28,12 +26,8 @@ web-build/
 .expo/
 *.log
 npm-debug.log*
-web-build/
-.expo/
-*.log
-npm-debug.log*
 
-# System & IDE
+
 # System & IDE
 .vscode/
 .idea/
