@@ -1,7 +1,7 @@
 import mediasoup from 'mediasoup';
 import { config } from '../config.js';
 
-let workers = [];
+const workers = [];
 let nextWorkerIdx = 0;
 
 export const createWorkers = async () => {
@@ -20,12 +20,14 @@ export const getWorker = () => {
   return worker;
 };
 
-export const createRouter = async (worker) => {
-  return await worker.createRouter({ mediaCodecs: config.mediasoup.router.mediaCodecs });
+export const createRouter = (worker) => {
+  return worker.createRouter({
+    mediaCodecs: config.mediasoup.router.mediaCodecs,
+  });
 };
 
-export const createWebRtcTransport = async (router) => {
-  return await router.createWebRtcTransport(config.mediasoup.webRtcTransport);
+export const createWebRtcTransport = (router) => {
+  return router.createWebRtcTransport(config.mediasoup.webRtcTransport);
 };
 
 export const createPlainTransport = async (router) => {

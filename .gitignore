@@ -44,3 +44,10 @@ video.mp4
 *video.mp4
 packages/media-server/video.mp4
 
+# Local scripts & Media
+test.sh
+media_files/
+packages/media-server/media_files/
+
+# Husky (Un-ignore just in case someone added a generic rule elsewhere)
+!.husky/
