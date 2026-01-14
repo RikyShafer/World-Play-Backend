@@ -1,8 +1,9 @@
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
-
 import dotenv from 'dotenv';
+
+// תיקון הנתיבים כאן:
 import streamRoutes from './src/routes/stream.routes.js';
 import { StreamService } from './src/services/stream.service.js';
 import { logger } from './src/utils/logger.js';
@@ -52,7 +53,7 @@ app.use('/live', streamRoutes);
 app.get('/', (req, res) => {
   res.json({
     status: 'online',
-    message: '🚀 World-Play Media Server is Live and Running!',
+    message: 'World-Play Media Server is Live and Running!',
     timestamp: new Date().toISOString(),
     service: 'media-server',
   });

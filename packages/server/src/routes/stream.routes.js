@@ -1,36 +1,19 @@
 import express from 'express';
-import streamController from '../controller/stream.controller.js';import { authenticateToken } from '../middleware/auth.middleware.js';
-import { StreamController } from '../../../media-server/src/controllers/streamController.js';
+import streamController from '../controller/stream.controller.js';
+import { authenticateToken } from '../middleware/auth.middleware.js';
+
 const router = express.Router();
+
+// נתיבים ציבוריים (ללא טוקן - אם ה-Media Server פונה מבחוץ)
+// אם ה-Media Server בתוך הדוקר, הוא יכול לפנות בלי טוקן בראוט ייעודי
+router.post('/pause', streamController.pauseStream);
+
+// נתיבים מוגנים (דורשים טוקן משתמש)
 router.use(authenticateToken);
-router.post('/', streamController.createStream);router.put('/:id/status', streamController.updateStatus);router.post('/:id/pause', streamController.pauseStream);
-router.post('/:id/resume', streamController.resumeStream);
-// נתיב ה-Ingest: לכאן שולחים את הווידאו ב-POST
-router.post('/:streamId', StreamController.start);
 
+router.post('/', streamController.createStream);
+router.put('/:id/status', streamController.updateStatus);
+router.post('/:streamId/start', streamController.start);
+router.post('/question-pause', streamController.handleQuestionPause);
 
-router.post('/api/streams/start-from-server', async (req, res) => {
-    const { streamId } = req.body;
-    
-    try {
-        console.log(`📢 Backend: Received start signal for stream ${streamId}`);
-        
-        // עדכון הסטטוס בבסיס הנתונים ל-LIVE
-        const updatedStream = await prisma.stream.update({
-            where: { id: streamId }, // ודאי שזה ה-ID הנכון
-            data: { 
-                status: 'LIVE',
-                startTime: new Date()
-            }
-        });
-
-        // כאן אפשר להוסיף שליחת הודעה ב-Socket.io לכל המשתמשים
-        // io.emit('stream_started', updatedStream);
-
-        res.status(200).json({ success: true, stream: updatedStream });
-    } catch (error) {
-        console.error("❌ Backend Error updating stream:", error.message);
-        res.status(500).json({ error: "Failed to update stream status" });
-    }
-});
 export default router;
