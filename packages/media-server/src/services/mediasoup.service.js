@@ -1,7 +1,7 @@
 import mediasoup from 'mediasoup';
 import { config } from '../config.js';
 
-let workers = [];
+const workers = [];
 let nextWorkerIdx = 0;
 
 export const createWorkers = async () => {
@@ -20,20 +20,22 @@ export const getWorker = () => {
   return worker;
 };
 
-export const createRouter = async (worker) => {
-  return await worker.createRouter({ mediaCodecs: config.mediasoup.router.mediaCodecs });
+export const createRouter = (worker) => {
+  return worker.createRouter({
+    mediaCodecs: config.mediasoup.router.mediaCodecs,
+  });
 };
 
-export const createWebRtcTransport = async (router) => {
-  return await router.createWebRtcTransport(config.mediasoup.webRtcTransport);
+export const createWebRtcTransport = (router) => {
+  return router.createWebRtcTransport(config.mediasoup.webRtcTransport);
 };
 
 export const createPlainTransport = async (router) => {
   const transport = await router.createPlainTransport({
     // מאזינים ל-Localhost כי ה-FFmpeg רץ על אותו שרת (או בתוך אותו קומפוז)
-    listenIp: { ip: '127.0.0.1', announcedIp: null }, 
+    listenIp: { ip: '127.0.0.1', announcedIp: null },
     rtcpMux: false, // הגדרה סטנדרטית לעבודה עם FFmpeg
-    comedia: true   // מאפשר לטרנספורט לזהות אוטומטית מאיפה FFmpeg משדר
+    comedia: true, // מאפשר לטרנספורט לזהות אוטומטית מאיפה FFmpeg משדר
   });
 
   return transport;
