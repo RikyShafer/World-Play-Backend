@@ -17,10 +17,20 @@ import statusRoutes from './routes/status.routes.js';
 // import corsOptions from './config/corsOptions.js';
 import { initializeSocketIO } from './services/socket.service.js';
 
+import paymentRoutes from './routes/payment.routes.js';
+import { handleWebhook } from './payments/payments.webhook.js';
+
 dotenv.config();
 const app = express();
 const server = http.createServer(app);
-const PORT = process.env.PORT || 2081;
+const PORT = process.env.PORT || 8080;
+
+// חשוב: הנתיב של ה-Webhook חייב לבוא לפני express.json()
+app.post(
+  '/api/payments/webhook',
+  express.raw({ type: 'application/json' }),
+  handleWebhook
+);
 
 // --- Middleware ---
 app.use(express.json());
@@ -42,6 +52,8 @@ app.use('/api/questions', questionRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/chat', chatRoutes);
+
+app.use('/api/payments', paymentRoutes);
 
 // --- Functions ---
 async function checkMediaServer() {

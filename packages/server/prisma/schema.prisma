@@ -1,6 +1,6 @@
 generator client {
   provider      = "prisma-client-js"
-  binaryTargets = ["native", "windows-static-x64", "debian-openssl-3.0.x"]
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -22,33 +22,87 @@ model User {
   googleId         String?           @unique
   facebookId       String?           @unique
   
-  // שדות ארנק (משימה 5.0)
+  // שדות ארנק
   walletCoins      Int               @default(0)
   walletDiamonds   Int               @default(0)
   isFirstPurchase  Boolean           @default(true)
-  stripeCustomerId String?           @unique @map("stripe_customer_id") // הוספנו @map למען עקביות בשמות השדות ב-DB
+  stripeCustomerId String?           @unique @map("stripe_customer_id")
 
   createdAt        DateTime          @default(now()) @map("created_at")
   updatedAt        DateTime          @updatedAt @map("updated_at")
   
-  receivedMessages ChatMessage[]    @relation("Receiver")
-  sentMessages     ChatMessage[]    @relation("Sender")
+  receivedMessages ChatMessage[]     @relation("Receiver")
+  sentMessages     ChatMessage[]     @relation("Sender")
   creditCards      CreditCard[]
-  following        Follow[]         @relation("following")
-  followedBy       Follow[]         @relation("followedBy")
+  following        Follow[]          @relation("Following")
+  followedBy       Follow[]          @relation("FollowedBy")
   participations   GameParticipant[]
-  hostedGames      Game[]           @relation("HostGames")
-  moderatedGames   Game[]           @relation("ModeratorGames")
+  hostedGames      Game[]            @relation("HostGames")
+  moderatedGames   Game[]            @relation("ModeratorGames")
   notifications    Notification[]
-  hostedStreams    Stream[]         @relation("HostStreams")
+  hostedStreams    Stream[]          @relation("HostStreams")
   transactions     Transaction[]
   userAnswers      UserAnswer[]
   points           UserPoint[]
-  hostLogs         ViewLog[]        @relation("HostLogs")
-  viewLogs         ViewLog[]
+  hostLogs         ViewLog[]         @relation("HostLogs")
+  viewLogs         ViewLog[]         @relation("UserLogs")
 
   @@map("users")
-  @@index([walletCoins, walletDiamonds]) // אינדקס לביצועים מהירים בעדכוני יתרה
+  @@index([walletCoins, walletDiamonds])
+}
+
+model ChatMessage {
+  id         String   @id @default(uuid())
+  content    String
+  senderId   String   @map("sender_id")
+  receiverId String   @map("receiver_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  
+  sender     User     @relation("Sender", fields: [senderId], references: [id])
+  receiver   User     @relation("Receiver", fields: [receiverId], references: [id])
+
+  @@map("chat_messages")
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String   @map("follower_id")
+  followingId String   @map("following_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  follower    User     @relation("Following", fields: [followerId], references: [id])
+  following   User     @relation("FollowedBy", fields: [followingId], references: [id])
+
+  @@unique([followerId, followingId])
+  @@map("follows")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  title     String
+  message   String
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+model ViewLog {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  hostId    String   @map("host_id")
+  gameId    String?  @map("game_id")
+  duration  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation("UserLogs", fields: [userId], references: [id])
+  host      User     @relation("HostLogs", fields: [hostId], references: [id])
+  game      Game?    @relation(fields: [gameId], references: [id])
+
+  @@map("view_logs")
 }
 
 model CreditCard {
@@ -110,7 +164,7 @@ model GameParticipant {
   userId       String   @map("user_id")
   role         UserRole
   score        Int      @default(0)
-  pointsInGame Int      @default(0) // שדה חדש (משימה 5.0)
+  pointsInGame Int      @default(0)
   joinedAt     DateTime @default(now()) @map("joined_at")
   game         Game     @relation(fields: [gameId], references: [id])
   user         User     @relation(fields: [userId], references: [id])
@@ -138,7 +192,7 @@ model QuestionOption {
   questionId     String       @map("question_id")
   text           String       @map("text")
   isCorrect      Boolean      @default(false) @map("is_correct")
-  linkedPlayerId String?      @map("linked_player_id") // שדה קריטי לניצחון (משימה 5.0)
+  linkedPlayerId String?      @map("linked_player_id")
   question       Question     @relation(fields: [questionId], references: [id])
   chosenByUsers  UserAnswer[]
 
@@ -180,10 +234,10 @@ model Transaction {
   userId        String            @map("user_id")
   type          TransactionType
   status        TransactionStatus @default(PENDING)
-  currency      CurrencyType      @default(COIN) // שדה חדש (משימה 5.0)
+  currency      CurrencyType      @default(COIN)
   amount        Int
-  gameId        String?           @map("game_id")   // שדה חדש (משימה 5.0)
-  metadata      Json?                               // שדה חדש ל-Stripe/Audit (משימה 5.0)
+  gameId        String?           @map("game_id")
+  metadata      Json?
   description   String?
   failureReason String?           @map("failure_reason")
   paymentMethod String?           @map("payment_method")
@@ -194,8 +248,6 @@ model Transaction {
 
   @@map("transactions")
 }
-
-// ... שאר המודלים (ChatMessage, Notification, ViewLog, Follow) נשארים אותו דבר
 
 enum CurrencyType {
   COIN
